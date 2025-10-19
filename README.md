@@ -43,14 +43,7 @@ project-root/
 │   │   ├── crc.c
 │   │   ├── config.c
 │   ├── client_gui/              # New GUI client (PyQt5)
-│   │   ├── main.py              # App entry point
-│   │   ├── sidebar.py           # Teams-style navigation
-│   │   ├── chat_panel.py        # Message history + input
-│   │   ├── file_panel.py        # File transfer UI
-│   │   ├── settings_panel.py    # Theme, username, etc.
-│   │   ├── client_socket.py     # TCP socket logic
-│   │   ├── protocol.py          # Frame parsing
-│   │   ├── assets/icons/        # SVG icons
+│   │   ├── ...               #see GUI Readme 
 ├── assets/               # Shared files
 ├── scripts/              # Bash & PowerShell scripts
 ├── Makefile              # Build automation

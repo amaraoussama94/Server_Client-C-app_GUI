@@ -133,7 +133,7 @@ jobs:
     - name: 🔁 Create Pull Request for version bump
       uses: peter-evans/create-pull-request@v5
       with:
-        token: ${{ secrets.PAT_TOKEN }}
+        token: ${{ secrets.GUI_TOKEN }}
         branch: version-bump-${{ steps.versioning.outputs.version }}
         title: "chore: bump version to ${{ steps.versioning.outputs.version }}"
         body: |
@@ -204,7 +204,7 @@ jobs:
     - name: 🔄 Sync binaries to test repo
       if: github.ref == 'refs/heads/main'
       run: |
-        TEST_REPO="https://oussama:${{ secrets.PAT_TOKEN }}@github.com/amaraoussama94/client-server-test-suite.git"
+        TEST_REPO="https://oussama:${{ secrets.GUI_TOKEN}}@github.com/amaraoussama94/client-server-test-suite.git"
         VERSION=${{ steps.merged-version.outputs.version }}
 
         git clone "$TEST_REPO" test-repo

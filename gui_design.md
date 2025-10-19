@@ -1,6 +1,18 @@
-# 🖼️ GUI Design: Qt Client Interface
+# 🧠 Modular Client-Server Chat App with PyQt5 GUI
 
-This document outlines the design and layout of the PyQt5-based GUI client for the `Server_Client-C-app` project. The server remains command-line; this interface is for client-side interaction only.
+This project features a cross-platform client-server architecture written in C, now extended with a modular PyQt5 GUI front-end. The GUI launches the compiled C client as a subprocess and communicates via stdin/stdout, preserving protocol integrity and contributor clarity.
+
+## 📦 Project Structure
+
+├── client_gui/           # PyQt5 GUI front-end 
+│ ├── main.py             # GUI entry point (launches C client subprocess) 
+│ ├── sidebar.py          # Conversation list panel 
+│ ├── chat_panel.py       # Message history + input 
+│ ├── file_panel.py       # File drag-and-drop interface 
+│ ├── settings_panel.py   # Username, theme, connection status 
+│ ├── client_socket.py    # Subprocess I/O wrapper 
+│ ├── protocol.py         # Frame parsing (mirrors C logic) 
+│ └── assets/icons/       # SVG icons
 
 ---
 
@@ -30,84 +42,55 @@ This document outlines the design and layout of the PyQt5-based GUI client for t
 ````
 ---
 
-## 🧩 Components
+## 🔌 How It Works
 
-### 🔹 Header
-- App title: `Server_Client-C-app`
-- Client ID display
-- Optional: Settings icon
+- The GUI launches the compiled C client as a subprocess
+- Frames are sent via `stdin` and received via `stdout`
+- The GUI parses and displays messages, file progress, and ACKs
+- All protocol logic remains in C — Python acts as a visual wrapper
 
-### 🔹 User List (Sidebar)
-- List of connected clients
-- Click to select target for chat or file
+---
+## 🚀 Getting Started
 
-### 🔹 Chat Panel
-- Scrollable message history
-- Input box with send button
-- Message timestamps and sender labels
+### 1. Compile the C client
+```bash
+cd client
+make
+```
+### 2. Install Python dependencies
 
-### 🔹 File Panel
-- File picker
-- Send button
-- Progress bar per transfer
-- Retry and ACK indicators
-
-### 🔹 Status Bar
-- Connection status (e.g., Connected to server)
-- Log messages (optional toggle)
+```bash
+pip install -r requirements.txt
+```
+###  3. Run the GUI
+```bash
+cd client_gui
+python main.py
+```
 
 ---
 
-## 🎨 Style Guide
 
-- Font: Segoe UI or system default
-- Theme: Light mode (dark mode optional)
-- Icons: SVG from `assets/icons/`
-- Responsive layout using `QVBoxLayout`, `QHBoxLayout`, and `QSplitter`
+## 🚀 Features
 
----
+- ✅ C-based protocol logic with CRC validation
+- ✅ PyQt5 GUI with modular panels and subprocess integration
+- ✅ Drag-and-drop file sending
+- ✅ Auto-version bump via GitHub Actions
+- ✅ Binary sync to external test suite repo
 
-## 🔌 Event Flow
+## 🧑‍💻 Contributor Notes
 
-| Action            | Triggered By       | Result                          |
-|-------------------|--------------------|----------------------------------|
-| Send message      | Chat input         | Frame sent to server            |
-| Receive message   | Socket event       | Message displayed in chat panel |
-| Send file         | File panel button  | Chunked transfer begins         |
-| Receive file      | Socket event       | Progress bar updates            |
-| ACK received      | Socket event       | Transfer marked complete        |
+- GUI logic is fully modular — each panel is its own class
+- C client is launched via `subprocess.Popen` with stdin/stdout piping
+- Protocol parsing is mirrored in `client_gui/protocol.py` for consistency
+- All commits and PRs follow contributor templates and CI validation
 
----
+## 🧪 Testing
 
-## 🧠 Future Enhancements
-
-- Group chat support
-- Emoji picker
-- Markdown rendering
-- Voice/video hooks
-- Notification system
-
----
-
-## 📂 File Mapping
-
-| File               | Purpose                          |
-|--------------------|----------------------------------|
-| `main.py`          | App entry point                  |
-| `chat_panel.py`    | Chat UI logic                    |
-| `file_panel.py`    | File transfer UI                 |
-| `client_socket.py` | TCP socket and protocol handling |
-| `protocol.py`      | Frame construction/parsing       |
-| `assets/icons/`    | UI icons                         |
-
----
-
-## 👥 Contributor Notes
-
-- Use `PyQt5` signals/slots for UI updates
-- Keep UI logic separate from network logic
-- Follow naming conventions and comment key flows
-- Log socket events for debugging
+- Run `make all` to build C binaries
+- Launch GUI via `python client_gui/main.py`
+- CI builds and releases are automated via GitHub Actions
 
 ---
 
