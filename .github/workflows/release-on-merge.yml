@@ -140,6 +140,7 @@ jobs:
         else
           echo "✅ VERSION already up to date. Skipping update."
           echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        fi
 
     - name: 🛑 Check for actual diff before PR
       run: |
