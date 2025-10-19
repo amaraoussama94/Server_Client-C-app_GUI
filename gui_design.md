@@ -23,24 +23,44 @@ This project features a cross-platform client-server architecture written in C, 
 - Modular layout for future features (e.g., groups, presence, media)
 
 ---
+## 🧩 GUI Component Breakdown
 
-## 🧱 Layout Overview
+This section defines the key UI components of the PyQt5 GUI client, inspired by modern messaging platforms like Microsoft Teams.
+
+| Section ID | Name                      | Description                                             |
+|------------|------------------------   |---------------------------------------------------------|
+| 1          | **ConversationListPanel** | Vertical sidebar listing all previous conversations     |
+|            |                           |  (by clien or group).                                   |
+|--------------------------------------------------------------------------------------------------|
+| 2          | **UserStatusHeader**      | Top bar showing current username, avatar, and           |
+|            |                           |connectionstatus.                                        |
+|--------------------------------------------------------------------------------------------------|
+| 3          | **WindowControlPanel**    | Standard window controls (minimize, maximize, close)    |
+|            |                           | — top-right corner.                                     |
+|--------------------------------------------------------------------------------------------------|
+| 4          | **ChatHistoryPanel**      | Main panel showing message history with selected        |
+|            |                           |client.                                                  |
+|--------------------------------------------------------------------------------------------------|
+| 5          | **MessageInputPanel**     | Bottom input area for typing messages or dragging       | 
+|            |                           |files to send.                                           |
+|--------------------------------------------------------------------------------------------------|
+| 6          | **SendButton**            | Action button to confirm sending message or             |
+|            |                           |file.                                                    |
+----------------------------------------------------------------------------------------------------
 
 ---
+
+### 🧱 Layout Sketch
 ````text
-+--------------------------------------------------------+
-| [Header] App title + Client ID                        |
-+-------------------+------------------------------------+
-| [Sidebar]         | [Main Panel]                      |
-| - Chat            | - Message history                 |
-| - Files           | - Compose box                     |
-| - Settings        | - File transfer panel             |
-+-------------------+------------------------------------+
-| [Status Bar] Connection + Logs                        |
-+--------------------------------------------------------+
-
++----------------------------------------------------------------------------------+ 
+|     [UserStatusHeader]                   [WindowControlPanel]                    | 
++----------------------------+-----------------------------------------------------+ 
+| [ConversationListPanel]    |  [ChatHistoryPanel]                                 |
+|                            |                                                     |
+|                            |                                                     |
+|                            |                                                     |                      |                            | [MessageInputPanel] [SendButton]                    | +----------------------------+-----------------------------------------------------+ 
+|                      [Status Bar: Connection + Logs]                             | +----------------------------------------------------------------------------------+
 ````
----
 
 ## 🔌 How It Works
 
@@ -93,4 +113,31 @@ python main.py
 - CI builds and releases are automated via GitHub Actions
 
 ---
+
+
+---
+
+### 🛠️ Implementation Notes
+
+- Use `QSplitter` to divide sidebar and main panel
+- Use `QStackedWidget` to switch between conversations
+- `ChatHistoryPanel` is scrollable (`QTextEdit` or `QListView`)
+- `MessageInputPanel` uses `QLineEdit` or `QTextEdit` with drag-and-drop support
+- `SendButton` triggers frame construction and subprocess send
+- `UserStatusHeader` can be a `QWidget` with `QHBoxLayout` (avatar + label + status)
+- `WindowControlPanel` can be native or custom-drawn with `QPushButton`s
+
+---
+
+### 🔄 Signal Flow Example
+
+| From                  | Signal/Event         | To                     | Action                                 |
+|-----------------------|----------------------|-------------------------|----------------------------------------|
+| MessageInputPanel     | `message_sent(str)`  | ClientBridge            | Send frame to C client via stdin       |
+| ClientBridge          | `frame_received(str)`| ChatHistoryPanel        | Append parsed message to history       |
+| FilePanel             | `file_selected(path)`| ClientBridge            | Begin chunked file transfer            |
+| ClientBridge          | `ack_received(file)` | FilePanel               | Update progress bar                    |
+
+---
+
 
