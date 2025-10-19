@@ -4,15 +4,19 @@ This project features a cross-platform client-server architecture written in C, 
 
 ## 📦 Project Structure
 
-├── client_gui/           # PyQt5 GUI front-end 
-│ ├── main.py             # GUI entry point (launches C client subprocess) 
-│ ├── sidebar.py          # Conversation list panel 
-│ ├── chat_panel.py       # Message history + input 
-│ ├── file_panel.py       # File drag-and-drop interface 
-│ ├── settings_panel.py   # Username, theme, connection status 
-│ ├── client_socket.py    # Subprocess I/O wrapper 
-│ ├── protocol.py         # Frame parsing (mirrors C logic) 
-│ └── assets/icons/       # SVG icons
+
+client_gui/
+├── main.py
+├── conversation_list_panel.py
+├── user_status_header.py
+├── window_control_panel.py
+├── chat_history_panel.py
+├── message_input_panel.py
+├── send_button.py
+├── status_bar.py
+├── assets/icons/
+├── requirements.txt
+└── docs/gui_design.md
 
 ---
 

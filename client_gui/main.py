@@ -1,28 +1,31 @@
 ##
 # @file main.py
 # @brief Entry point for the PyQt5 GUI client of Server_Client-C-app.
-#        Initializes the main window, sidebar navigation, and core panels.
-#        Mimics Microsoft Teams layout with modular design.
-# @author Oussama Amara
+#        Sets up the main window layout and loads placeholder panels.
+#        This GUI wraps the compiled C client binary (subprocess integration comes later).
+# @author Oussama
 # @date 2025-10-19
 # @version 1.0
 ##
 
 import sys
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout,
-    QHBoxLayout, QSplitter, QStatusBar
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+    QSplitter, QStatusBar
 )
 from PyQt5.QtCore import Qt
 
-# Import modular panels
-from sidebar import Sidebar         # Sidebar navigation (Chat, Files, Settings)
-from chat_panel import ChatPanel    # Chat interface
-from file_panel import FilePanel    # File transfer interface
+# Import placeholder panels (we'll define these next)
+from conversation_list_panel import ConversationListPanel
+from user_status_header import UserStatusHeader
+from window_control_panel import WindowControlPanel
+from chat_history_panel import ChatHistoryPanel
+from message_input_panel import MessageInputPanel
+from send_button import SendButton
 
 ##
 # @class MainWindow
-# @brief Main application window that hosts sidebar and dynamic content panels.
+# @brief Main application window that hosts all GUI components.
 ##
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -30,53 +33,51 @@ class MainWindow(QMainWindow):
 
         # Set window properties
         self.setWindowTitle("Server_Client-C-app GUI")
-        self.setMinimumSize(900, 600)
+        self.setMinimumSize(1000, 700)
 
         # Create central widget and layout
         central_widget = QWidget()
-        central_layout = QHBoxLayout()
-        central_widget.setLayout(central_layout)
-
-        # Initialize sidebar (Teams-style navigation)
-        self.sidebar = Sidebar()
-        self.sidebar.setFixedWidth(200)
-
-        # Initialize main content panels
-        self.chat_panel = ChatPanel()
-        self.file_panel = FilePanel()
-
-        # Use QSplitter to separate sidebar and main panel
-        self.splitter = QSplitter(Qt.Horizontal)
-        self.splitter.addWidget(self.sidebar)
-        self.splitter.addWidget(self.chat_panel)  # Default view
-        self.splitter.setStretchFactor(1, 1)
-
-        # Add splitter to layout
-        central_layout.addWidget(self.splitter)
+        main_layout = QVBoxLayout()
+        central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
 
-        # Add status bar for connection/log messages
+        # ─── Top Bar: User Status + Window Controls ─────────────────────────────
+        top_bar = QHBoxLayout()
+        self.user_status = UserStatusHeader()
+        self.window_controls = WindowControlPanel()
+        top_bar.addWidget(self.user_status)
+        top_bar.addStretch()
+        top_bar.addWidget(self.window_controls)
+        main_layout.addLayout(top_bar)
+
+        # ─── Middle Section: Sidebar + Chat Panel ───────────────────────────────
+        middle_splitter = QSplitter(Qt.Horizontal)
+
+        # Sidebar: Conversation list
+        self.sidebar = ConversationListPanel()
+        middle_splitter.addWidget(self.sidebar)
+
+        # Chat panel: History + Input
+        chat_panel = QWidget()
+        chat_layout = QVBoxLayout()
+        chat_panel.setLayout(chat_layout)
+
+        self.chat_history = ChatHistoryPanel()
+        self.message_input = MessageInputPanel()
+        self.send_button = SendButton()
+
+        chat_layout.addWidget(self.chat_history)
+        chat_layout.addWidget(self.message_input)
+        chat_layout.addWidget(self.send_button)
+
+        middle_splitter.addWidget(chat_panel)
+        middle_splitter.setStretchFactor(1, 1)
+        main_layout.addWidget(middle_splitter)
+
+        # ─── Status Bar ─────────────────────────────────────────────────────────
         self.status = QStatusBar()
         self.setStatusBar(self.status)
         self.status.showMessage("Disconnected")
-
-        # Connect sidebar signal to panel switcher
-        self.sidebar.switch_panel.connect(self.load_panel)
-
-    ##
-    # @brief Switches the main panel based on sidebar selection.
-    # @param panel_name Name of the panel to load ("chat", "files", etc.)
-    ##
-    def load_panel(self, panel_name):
-        # Remove current panel
-        self.splitter.widget(1).deleteLater()
-
-        # Insert selected panel
-        if panel_name == "chat":
-            self.splitter.insertWidget(1, self.chat_panel)
-        elif panel_name == "files":
-            self.splitter.insertWidget(1, self.file_panel)
-        # Future panels (e.g., settings) can be added here
 
 ##
 # @brief Initializes the Qt application and launches the main window.

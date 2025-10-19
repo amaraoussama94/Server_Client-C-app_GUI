@@ -1,0 +1,267 @@
+Module: main.py
+High-level purpose:
+This module provides the entry point and primary window implementation for the
+PyQt5-based GUI client of the Server_Client-C-app project. It composes a
+resizable two-pane layout (conversation sidebar + chat area) with a top bar
+containing user status and window controls, and a bottom status bar. The GUI
+currently uses placeholder panel widgets; integration with the compiled C
+client binary (via subprocess or other IPC) is planned but not implemented
+here.
+Key components:
+- Top bar: UserStatusHeader (left) and WindowControlPanel (right) arranged in
+    an HBox layout to display the current user status and window control buttons.
+- Middle section: QSplitter (horizontal) containing:
+        - ConversationListPanel: a sidebar listing conversations/contacts.
+        - Chat area: a vertical layout with ChatHistoryPanel, MessageInputPanel, and
+            SendButton stacked top-to-bottom. The chat area is stretchable and occupies
+            the majority of the window by default.
+- Status bar: QStatusBar showing connection state (initially "Disconnected").
+Dependencies:
+- PyQt5 (QtWidgets, QtCore)
+- Local placeholder widget modules:
+    conversation_list_panel, user_status_header, window_control_panel,
+    chat_history_panel, message_input_panel, send_button
+Behavior and UX notes:
+- QSplitter enables interactive resizing of the sidebar and chat area,
+    providing a familiar experience similar to modern messaging apps.
+- QVBoxLayout and QHBoxLayout are used to keep sections organized and adaptive
+    to window resizes.
+- The main window enforces a sensible minimum size (1000x700) to preserve
+    layout integrity.
+Extension points / TODOs:
+- Replace placeholder panels with fully implemented widgets that communicate
+    with the C client binary.
+- Implement subprocess integration or an IPC layer to launch and interact with
+    the compiled C client (handle stdin/stdout, lifecycle, error reporting).
+- Add signal-slot wiring:
+        - conversation selection -> load chat history
+        - send button / message input -> dispatch outgoing messages to C client
+        - status updates from C client -> update QStatusBar and UserStatusHeader
+- Add input validation, connection state management, and error dialogs as
+    appropriate for production readiness.
+
+Class: MainWindow
+Purpose:
+Main application window that arranges and hosts all GUI components for the
+client. Encapsulates the top status area, a resizable middle splitter with
+conversation list and chat panel, and a bottom status bar.
+Layout summary:
+- Top bar (QHBoxLayout): UserStatusHeader, stretch spacer, WindowControlPanel
+- Middle (QSplitter, Horizontal):
+        - Left widget: ConversationListPanel (sidebar)
+        - Right widget: QWidget with QVBoxLayout containing:
+                - ChatHistoryPanel (scrollable area showing messages)
+                - MessageInputPanel (text entry and controls)
+                - SendButton (triggers message send)
+- Bottom: QStatusBar showing connection/info messages
+Attributes:
+- user_status: UserStatusHeader instance (displays current user / presence)
+- window_controls: WindowControlPanel instance (minimize/close/maximize)
+- sidebar: ConversationListPanel instance (conversation/contact list)
+- chat_history: ChatHistoryPanel instance (message display area)
+- message_input: MessageInputPanel instance (text input area)
+- send_button: SendButton instance (action to send message)
+- status: QStatusBar instance (persistent status messages)
+Notes for implementers:
+- setStretchFactor is used so the chat area expands while the sidebar keeps a
+    reasonable width.
+- Replace placeholder components with fully-featured implementations and wire
+    signals for user interactions and backend communication.
+
+Function: main()
+Purpose:
+Create the QApplication, instantiate MainWindow, show it, and start the Qt
+event loop. Intended to be used as the script entry point when running this
+module directly.
+Execution:
+- Initializes QApplication with command-line arguments.
+- Constructs MainWindow and makes it visible.
+- Calls app.exec_() (Qt event loop) and exits with its return code.
+Usage:
+Run the file as a script (python main.py) or import main() from another runner.
+Ensure PyQt5 is available in the environment before launching.
+Notes:
+- On platforms where a different event loop integration is required, adapt the
+    application lifecycle accordingly.
+- Add proper exception handling and graceful shutdown logic when integrating the
+    GUI with a subprocess-driven backend.
+----------------------------------------------------------------------------------------------------------
+Module conversation_list_panel.py
+   
+    A QWidget that presents a titled, scrollable list of conversations.
+    This panel is intended to be used inside a larger GUI (for example, as a sidebar
+    in a chat client). It arranges a title label and a QListWidget vertically using
+    a QVBoxLayout.
+    Attributes
+    ---------
+    list_widget : QListWidget
+        The list widget that displays conversation entries. It is populated with
+        placeholder items by default ("Client #1", "Client #2", "Group: Dev Team",
+        "Client #3"). Callers can modify this widget directly (e.g. addItem,
+        addItems, clear, setCurrentRow) or connect to its signals (e.g.
+        itemClicked, currentItemChanged) to react to user selection.
+    Notes
+    -----
+    - The visual title text is "Conversations".
+    - The class currently provides only the UI composition; it does not implement
+      data-loading, selection handling, or context menus. Those responsibilities
+      should be implemented by the parent component or by subclassing this panel.
+-------------------------------------------------------------------------------------------
+ Module :user_status_header.py
+
+    UserStatusHeader(QWidget)
+    A small horizontal header widget that displays the current user's name and
+    their connection status.
+    Attributes
+    ---------
+    username_label : QLabel
+        Label used to show the user's name (prefixed with a user icon in the
+        current implementation).
+    status_label : QLabel
+        Label used to show the connection status (prefixed with a status icon,
+        e.g. "🔴 Disconnected" or "🟢 Connected").
+    Behavior
+    --------
+    - The widget lays out the two QLabel widgets in a QHBoxLayout.
+    - It is intended to be instantiated without arguments and added to a parent
+      layout or widget.
+    Usage
+    -----
+    - Create an instance and add it to your GUI.
+    - Update the displayed text by calling:
+        self.username_label.setText("👤 <name>")
+        self.status_label.setText("🟢 Connected")
+      Prefer using Qt signals/slots to update these labels from background threads
+      to ensure updates occur on the main GUI thread.
+    Notes
+    -----
+    - Designed for use with PyQt/PySide Qt bindings.
+    - Styling and icons may be customized by changing the QLabel text, applying
+      stylesheets, or replacing the labels with richer widgets if needed.
+    
+----------------------------------------------------------------------------------------
+ Module :window_control_panel.py
+
+    WindowControlPanel()
+    A simple horizontal control panel widget providing typical window action buttons:
+    minimize, maximize/restore, and close.
+    This is a lightweight QWidget containing three QPushButton instances laid out
+    horizontally. The class constructs the UI only and does not implement any window
+    management behavior — callers should connect the buttons' signals to the desired
+    slot functions (for example, the parent window's minimize/maximize/close methods).
+    Attributes
+    ----------
+    layout : QHBoxLayout
+        The horizontal layout used to arrange the control buttons.
+    min_btn : QPushButton
+        Button labeled "—" intended to trigger window minimization.
+    max_btn : QPushButton
+        Button labeled "□" intended to toggle maximize/restore behavior.
+    close_btn : QPushButton
+        Button labeled "✕" intended to close the window.
+    Usage
+    -----
+    Create an instance and connect the buttons to your window control slots, for example:
+        panel = WindowControlPanel()
+        panel.min_btn.clicked.connect(window.showMinimized)
+        panel.max_btn.clicked.connect(lambda: window.showMaximized() if not window.isMaximized() else window.showNormal())
+        panel.close_btn.clicked.connect(window.close)
+    Notes
+    -----
+    - The visual labels for the buttons are simple text symbols; you may replace them
+      with icons if desired.
+    - The widget is designed to be embedded into an application's title bar or a
+      custom toolbar. It does not assume ownership of the target window; explicit
+      connections are required to perform actions on a specific window instance.
+
+--------------------------------------------------------------------------------------
+ Module :chat_history_panel.py
+ 
+    ChatHistoryPanel(QWidget)
+    A simple chat history view implemented as a QWidget containing a read-only QTextEdit.
+    This panel provides a vertically stacked layout with a single QTextEdit widget used
+    to display chat messages. Messages are appended as HTML-formatted lines where the
+    sender is emphasized in bold.
+    Attributes
+    ----------
+    history : QTextEdit
+        The read-only text widget used to display the chat history. Use this attribute
+        only for advanced customization; normal message updates should be done via
+        append_message().
+    Methods
+    -------
+    append_message(sender, message)
+        Append a new message to the history. The sender is rendered in bold followed
+        by the message text. Both parameters are expected to be strings; message
+        content will be inserted as HTML (so ensure it is properly escaped if it
+        originates from untrusted sources).
+    Notes
+    -----
+    - This widget should be used from the Qt main (GUI) thread. If messages arrive
+      from background threads, marshal them to the GUI thread (for example using
+      signals/slots or QMetaObject.invokeMethod) before calling append_message().
+    - The QTextEdit is configured as read-only to prevent user edits to the chat log.
+--------------------------------------------------------------------------------------
+ Module :message_input_panel.py
+     
+    MessageInputPanel(QWidget)
+    A simple input widget that provides a single-line text field for composing messages
+    and emits a Qt signal when the user submits text by pressing Enter.
+    Behaviour
+    - Presents a QLineEdit with the placeholder text "Type your message...".
+    - When the user presses Enter, the current text is trimmed of leading/trailing
+        whitespace; if non-empty, the widget emits the `message_ready` signal with the
+        trimmed text and then clears the input field.
+    Signals
+    - message_ready(str): Emitted with the trimmed message text when the user presses
+        Enter and the input is not empty.
+    Methods
+    - emit_message(): Internal slot connected to the QLineEdit.returnPressed signal.
+        Retrieves trimmed text, emits `message_ready` if text is non-empty, and clears
+        the input field.
+    Usage example
+    - Connect to the signal to receive submitted messages:
+            panel = MessageInputPanel()
+            panel.message_ready.connect(handle_message)  # handle_message(msg: str) -> None
+    Notes
+    - The widget performs only simple trimming/emptiness checking; additional
+        validation or transformation should be done by the signal receiver.
+    - Designed to be used from the Qt main thread; signal emission follows Qt's
+        threading guarantees.
+    
+--------------------------------------------------------------------------------------
+ Module :send_button.py
+  
+    SendButton(QWidget)
+    A simple reusable widget that encapsulates a single "Send" QPushButton
+    and exposes a high-level signal that consumers can connect to.
+    This widget creates a vertical layout containing a QPushButton labeled
+    "Send". When the button is clicked, the widget emits the `send_clicked`
+    pyqtSignal so callers can respond without directly handling the button
+    clicked signal.
+    Signals
+    -------
+    send_clicked()
+        Emitted when the user clicks the "Send" button.
+    Attributes
+    ----------
+    send_clicked : pyqtSignal
+        Signal emitted on button click.
+    button : QPushButton
+        The underlying button widget presented to the user.
+    layout : QVBoxLayout
+        The layout used to arrange the button inside this widget.
+    Example
+    -------
+    def on_send():
+        print("Send requested")
+    send_widget = SendButton()
+    send_widget.send_clicked.connect(on_send)
+    Notes
+    -----
+    - The widget inherits from QWidget and is intended to be used within a
+      running Qt application (e.g., after QApplication has been created).
+    - The connection from the QPushButton.clicked signal to send_clicked.emit
+      is made in the constructor so consumers only need to connect to
+      `send_clicked` to be notified of user intent to send.
+    
