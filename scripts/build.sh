@@ -2,7 +2,7 @@
 # Build script for Unix-like systems
 cd ..
 echo "[*] Building project..."
-make clean && make all
+make clean && make all &&make build-gui
 
 if [ $? -eq 0 ]; then
     echo "[✓] Build successful."

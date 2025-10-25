@@ -1,24 +1,24 @@
-# /**
-#  * @file build-release.yml
-#  * @brief Unified GitHub Actions workflow for cross-platform build, version bump via pull request,
-#  *        automated tagging and release.
-#  *
-#  *        - Builds Windows and Linux binaries using Make (output: build/bin/)
-#  *        - Packages and uploads artifacts as windows-binaries and linux-binaries
-#  *        - Detects latest tag (SRV_CLE_GEN_GUI_X.Y), increments version, and updates VERSION file
-#  *        - Opens a pull request only if VERSION changes (with debug logs)
-#  *        - Creates annotated tag and GitHub release after PR merge
-#  *
-#  *        Complies with branch protection rules by avoiding direct pushes to main.
-#  *        Includes debug logs for versioning, PR creation, and release steps.
-#  *        Designed for modular, contributor-friendly client-server architecture validation.
-#  *
-#  * @author Oussama Amara
-#  * @version 2.0
-#  * @date 2025-10-19
-#  */
+##
+# @file build-release.yml
+# @brief Unified GitHub Actions workflow for cross-platform C builds, GUI packaging,
+#        version bump via pull request, and automated release.
+#
+# @details
+# This workflow performs the following:
+#   - Builds C server/client on Windows and Linux
+#   - Builds Python GUI using PyInstaller
+#   - Uploads all binaries as artifacts
+#   - Bumps version tag and creates GitHub release
+#
+# @note
+# GUI binaries are now included in the release artifacts for both Windows and Linux.
+#
+# @author Oussama Amara
+# @version 2.2
+# @date 2025-10-25
+##
 
-name: Cross-Platform Build, Version Bump & Release
+name: Cross-Platform Build, GUI Packaging & Release
 
 on:
   push:
@@ -29,8 +29,11 @@ permissions:
   contents: write
 
 jobs:
+  ##
+  # @brief Build C binaries on Windows using MSYS2
+  ##
   build-windows:
-    name: Build on Windows
+    name: Build C on Windows
     runs-on: windows-latest
     defaults:
       run:
@@ -40,7 +43,7 @@ jobs:
     - name: 🧾 Checkout code
       uses: actions/checkout@v3
 
-    - name: 🛠 Set up MSYS2 for GCC and Make
+    - name: 🛠 Set up MSYS2
       uses: msys2/setup-msys2@v2
       with:
         update: true
@@ -49,24 +52,27 @@ jobs:
           mingw-w64-x86_64-gcc
           make
 
-    - name: 🧱 Build Windows binaries
+    - name: 🧱 Build C binaries
       run: |
         make clean
         make all
 
-    - name: 📦 Package Windows binaries
+    - name: 📦 Package C binaries
       run: |
         mkdir -p dist/windows-binaries
         cp build/bin/*.exe dist/windows-binaries/
 
-    - name: 📤 Upload Windows artifacts
+    - name: 📤 Upload C artifacts
       uses: actions/upload-artifact@v4
       with:
         name: windows-binaries
         path: dist/windows-binaries/
 
+  ##
+  # @brief Build C binaries on Linux
+  ##
   build-linux:
-    name: Build on Linux
+    name: Build C on Linux
     runs-on: ubuntu-latest
 
     steps:
@@ -76,25 +82,73 @@ jobs:
     - name: 🛠 Install build tools
       run: sudo apt-get update && sudo apt-get install -y build-essential
 
-    - name: 🧱 Build Linux binaries
+    - name: 🧱 Build C binaries
       run: |
         make clean
         make all
 
-    - name: 📦 Package Linux binaries
+    - name: 📦 Package C binaries
       run: |
         mkdir -p dist/linux-binaries
         cp build/bin/* dist/linux-binaries/
 
-    - name: 📤 Upload Linux artifacts
+    - name: 📤 Upload C artifacts
       uses: actions/upload-artifact@v4
       with:
         name: linux-binaries
         path: dist/linux-binaries/
 
+  ##
+  # @brief Build Python GUI executable using PyInstaller
+  ##
+  build-gui:
+    name: Build GUI Executable
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+    steps:
+    - name: 🧾 Checkout code
+      uses: actions/checkout@v3
+
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: 📦 Install PyInstaller
+      run: pip install pyinstaller
+
+    - name: 🧱 Build GUI binary
+      run: |
+        cd client_gui
+        pyinstaller --onefile --windowed main.py --name ServerClientGUI
+
+    - name: 📦 Package GUI binary
+      run: |
+        mkdir -p dist/gui-${{ runner.os }}
+        cp client_gui/dist/ServerClientGUI* dist/gui-${{ runner.os }}/
+
+    - name: 📤 Upload GUI artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: gui-${{ runner.os }}
+        path: dist/gui-${{ runner.os }}/
+
+  ##
+  # @brief Create version bump PR and GitHub release
+  # @details
+  # This job runs after all builds succeed. It:
+  #   - Detects latest version tag
+  #   - Increments version
+  #   - Creates a pull request if needed
+  #   - Tags the release
+  #   - Publishes all artifacts including GUI binaries
+  ##
   tag-and-release:
     name: Version Bump PR + Release
-    needs: [build-windows, build-linux]
+    needs: [build-windows, build-linux, build-gui]
     runs-on: ubuntu-latest
 
     steps:
@@ -110,41 +164,29 @@ jobs:
       id: versioning
       run: |
         git fetch --tags
-        echo "🔍 Fetching latest version tag..."
         LATEST_TAG=$(git tag | grep '^SRV_CLE_GEN_GUI_' | sort -V | tail -n1)
-        echo "🔎 Latest tag: $LATEST_TAG"
-
         if [ -z "$LATEST_TAG" ]; then
           NEW_VERSION="1.0"
         else
           BASE_VERSION=${LATEST_TAG#SRV_CLE_GEN_GUI_}
           MAJOR=$(echo $BASE_VERSION | cut -d. -f1)
           MINOR=$(echo $BASE_VERSION | cut -d. -f2)
-
           if [ "$MINOR" -lt 9 ]; then
             NEW_VERSION="$MAJOR.$((MINOR + 1))"
           else
             NEW_VERSION="$((MAJOR + 1)).0"
           fi
         fi
-
-        echo "🆕 Proposed new version: $NEW_VERSION"
-
         CURRENT_VERSION=$(cat VERSION || echo "")
-        echo "📄 Current VERSION file: $CURRENT_VERSION"
-
         if [ "$CURRENT_VERSION" != "$NEW_VERSION" ]; then
           echo "$NEW_VERSION" > VERSION
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "📄 VERSION updated to $NEW_VERSION"
         else
-          echo "✅ VERSION already up to date. Skipping update."
           echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
         fi
 
     - name: 🛑 Check for actual diff before PR
       run: |
-        echo "🔍 Checking for diff in VERSION file..."
         git add VERSION
         if git diff --cached --quiet; then
           echo "✅ No staged changes in VERSION. Skipping PR."
@@ -160,8 +202,8 @@ jobs:
         branch: version-bump-${{ steps.versioning.outputs.version }}
         title: "chore: bump version to ${{ steps.versioning.outputs.version }}"
         body: |
-          Automated version bump to `${{ steps.versioning.outputs.version }}`.
-          Triggered by successful builds on Windows and Linux.
+          Automated version bump to `${{ steps.versioning.outputs.version}`.
+          Triggered by successful builds on Windows, Linux, and GUI packaging.
         labels: version-bump, automated
         assignees: OussamaAmara
 
@@ -180,7 +222,6 @@ jobs:
       if: github.ref == 'refs/heads/main'
       run: |
         TAG="SRV_CLE_GEN_GUI_${{ steps.merged-version.outputs.version }}"
-        echo "🏷 Creating tag: $TAG"
         if git rev-parse "$TAG" >/dev/null 2>&1; then
           echo "⚠️ Tag $TAG already exists. Skipping."
         else
@@ -203,3 +244,5 @@ jobs:
         files: |
           dist/windows-binaries/*.exe
           dist/linux-binaries/*
+          dist/gui-windows/*.exe
+          dist/gui-ubuntu/*
