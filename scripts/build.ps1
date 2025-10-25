@@ -3,7 +3,9 @@
 Write-Host "[*] Building project..."
 cd ..
 make clean
+make build-gui
 make all
+
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "[OK] Build successful."
