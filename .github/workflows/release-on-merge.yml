@@ -202,7 +202,7 @@ jobs:
         branch: version-bump-${{ steps.versioning.outputs.version }}
         title: "chore: bump version to ${{ steps.versioning.outputs.version }}"
         body: |
-          Automated version bump to `${{ steps.versioning.outputs.version}`.
+          Automated version bump to `${{ steps.versioning.outputs.version}}`.
           Triggered by successful builds on Windows, Linux, and GUI packaging.
         labels: version-bump, automated
         assignees: OussamaAmara
