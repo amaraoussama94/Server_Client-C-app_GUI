@@ -16,7 +16,7 @@
 # Artifact names are unique: windows-c, windows-gui, linux-c, linux-gui
 #
 # @author Oussama Amara
-# @version 2.5
+# @version 2.6
 # @date 2025-10-26
 ##
 
@@ -169,7 +169,7 @@ jobs:
       with:
         name: linux-gui
         path: dist/linux/
-  ##
+    ##
   # @brief Create version bump PR and GitHub release
   # @details
   # This job runs after all builds succeed. It:
@@ -177,9 +177,10 @@ jobs:
   #   - Increments version
   #   - Creates a pull request if needed
   #   - Tags the release
-  #   - Publishes all platform-specific binaries (C and GUI)
+  #   - Downloads and merges artifacts from all build jobs
+  #   - Publishes unified platform-specific binaries to GitHub Releases
   # @note
-  # Depends on: build-windows, build-linux, build-gui-windows, build-gui-linux
+  # Artifact folders are normalized into dist/windows/ and dist/linux/
   ##
   tag-and-release:
     name: Version Bump PR + Release
@@ -270,6 +271,15 @@ jobs:
       with:
         path: dist/
         merge-multiple: true
+
+    - name: 🧩 Normalize artifact folders
+      if: github.ref == 'refs/heads/main'
+      run: |
+        mkdir -p dist/windows dist/linux
+        cp -r dist/windows-c/* dist/windows/ || true
+        cp -r dist/windows-gui/* dist/windows/ || true
+        cp -r dist/linux-c/* dist/linux/ || true
+        cp -r dist/linux-gui/* dist/linux/ || true
 
     - name: 🚀 Create GitHub Release
       if: github.ref == 'refs/heads/main'
