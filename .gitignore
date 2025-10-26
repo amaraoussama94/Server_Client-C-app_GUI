@@ -4,5 +4,7 @@ build/
 *.log
 *.tmp
 *.spec
+*.pyc
+__pycache__/
 
 
