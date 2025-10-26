@@ -1,12 +1,10 @@
 ##
 # @file chat_history_panel.py
 # @brief Scrollable panel showing message history.
+#        Automatically scrolls to latest message.
 # @author Oussama Amara
-# @date 2025-10-19
-# @version 1.0
-#Note:
-#This panel shows all messages in a scrollable view.
-#You’ll call append_message() when a new frame is received.
+# @date 2025-10-26
+# @version 1.1
 ##
 
 from PyQt5.QtWidgets import QWidget, QTextEdit, QVBoxLayout
@@ -34,3 +32,4 @@ class ChatHistoryPanel(QWidget):
     ##
     def append_message(self, sender, message):
         self.history.append(f"<b>{sender}:</b> {message}")
+        self.history.moveCursor(self.history.textCursor().End)

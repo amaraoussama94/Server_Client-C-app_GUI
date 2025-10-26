@@ -26,7 +26,10 @@ class UserStatusHeader(QWidget):
         # Username label
         self.username_label = QLabel("👤 Oussama")
         layout.addWidget(self.username_label)
-
+        self.setFixedHeight(30)  # Or try 25 for tighter layout
         # Connection status
         self.status_label = QLabel("🔴 Disconnected")
         layout.addWidget(self.status_label)
+        self.username_label.setStyleSheet("font-size: 12px; padding: 0px;")
+        self.status_label.setStyleSheet("font-size: 12px; padding: 0px;")
+

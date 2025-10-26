@@ -1,19 +1,26 @@
 ##
 # @file window_control_panel.py
 # @brief Custom window control buttons (minimize, maximize, close).
+#        Currently unused — OS handles window chrome.
+#        Reserved for future frameless window styling.
+#
 # @author Oussama Amara
-# @date 2025-10-19
-# @version 1.0
-#Note:
-#These buttons are placeholders for window control.
-#You can later connect them to self.parent().showMinimized() etc.
+# @date 2025-10-26
+# @version 1.1
+#
+# @note
+# This panel is a placeholder. The OS currently provides native window controls.
+# If we switch to a frameless window (Qt.FramelessWindowHint), we’ll:
+#   - Enable this panel and wire buttons to window actions.
+#   - Implement drag-to-move behavior manually.
+#   - Style buttons to match the GUI theme.
 ##
 
 from PyQt5.QtWidgets import QWidget, QPushButton, QHBoxLayout
 
 ##
 # @class WindowControlPanel
-# @brief Provides standard window control buttons.
+# @brief Provides standard window control buttons (inactive until frameless mode).
 ##
 class WindowControlPanel(QWidget):
     
@@ -23,7 +30,7 @@ class WindowControlPanel(QWidget):
         layout = QHBoxLayout()
         self.setLayout(layout)
 
-        # Minimize button
+        # Placeholder buttons (inactive)
         self.min_btn = QPushButton("—")
         self.max_btn = QPushButton("□")
         self.close_btn = QPushButton("✕")
@@ -32,4 +39,7 @@ class WindowControlPanel(QWidget):
         layout.addWidget(self.max_btn)
         layout.addWidget(self.close_btn)
 
-        # Connect buttons to window actions (to be wired in main.py)
+        # TODO: Activate these buttons when frameless mode is enabled in MainWindow
+        # TODO: Connect to self.parent().showMinimized(), toggleMaxRestore(), and close()
+        # TODO: Add drag-to-move logic for frameless window
+        # TODO: Style buttons to match dark theme
