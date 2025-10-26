@@ -29,13 +29,13 @@ PLATFORM_LIBS = -lws2_32
 CFLAGS += -D_WIN32 -mconsole
 TARGET_SERVER = $(BIN_DIR)/server.exe
 TARGET_CLIENT = $(BIN_DIR)/client.exe
-GUI_BINARY = dist/ServerClientGUI.exe
+GUI_BINARY = build/bin/ServerClientGUI.exe
 PYINSTALLER_FLAGS = --onefile --windowed --name ServerClientGUI
 else
 PLATFORM_LIBS =
 TARGET_SERVER = $(BIN_DIR)/server
 TARGET_CLIENT = $(BIN_DIR)/client
-GUI_BINARY = dist/ServerClientGUI
+GUI_BINARY = build/bin/ServerClientGUI
 PYINSTALLER_FLAGS = --onefile --name ServerClientGUI
 endif
 
@@ -88,7 +88,6 @@ endif
 
 PYINSTALLER=pyinstaller
 PYINSTALLER_FLAGS=--onefile --windowed
-GUI_BINARY=dist/main.exe
 # ─── Build GUI Target ───────────────────────────────────────
 build-gui:
 	@echo " Building Python GUI..."
@@ -96,7 +95,7 @@ build-gui:
 	@$(INSTALL_PYINSTALLER) > /dev/null
 	@$(INSTALL_PYQT5) > /dev/null
 	@echo " Building Python GUI executable..."
-	@$(PYINSTALLER) $(PYINSTALLER_FLAGS) client_gui/main.py
+	@$(PYINSTALLER) $(PYINSTALLER_FLAGS) --distpath $(BIN_DIR)  client_gui/main.py
 	@echo " GUI built: $(GUI_BINARY)"
 
 

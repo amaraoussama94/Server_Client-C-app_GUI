@@ -7,16 +7,16 @@
 # This workflow performs the following:
 #   - Builds C server/client on Windows and Linux
 #   - Builds Python GUI using PyInstaller (with PyQt5)
-#   - Packages all platform-specific binaries into unified folders
+#   - Places all binaries in build/bin/
 #   - Uploads artifacts with distinct names to avoid conflicts
 #   - Bumps version tag and creates GitHub release
 #
 # @note
-# GUI builds are now split into separate jobs for Windows and Linux to avoid shell compatibility issues.
-# Artifact names are unique: windows-c, windows-gui, linux-c, linux-gui
+# All binaries (C and GUI) are now placed under build/bin/
+# Artifact folders are merged into release/windows/ and release/linux/ before publishing
 #
 # @author Oussama Amara
-# @version 2.6
+# @version 2.7
 # @date 2025-10-26
 ##
 
@@ -59,16 +59,11 @@ jobs:
         make clean
         make all
 
-    - name: 📦 Package Windows C binaries
-      run: |
-        mkdir -p dist/windows
-        cp build/bin/*.exe dist/windows/
-
     - name: 📤 Upload Windows C artifacts
       uses: actions/upload-artifact@v4
       with:
         name: windows-c
-        path: dist/windows/
+        path: build/bin/
 
   ##
   # @brief Build C binaries on Linux
@@ -89,16 +84,11 @@ jobs:
         make clean
         make all
 
-    - name: 📦 Package Linux C binaries
-      run: |
-        mkdir -p dist/linux
-        cp build/bin/* dist/linux/
-
     - name: 📤 Upload Linux C artifacts
       uses: actions/upload-artifact@v4
       with:
         name: linux-c
-        path: dist/linux/
+        path: build/bin/
 
   ##
   # @brief Build Python GUI executable on Windows using PyInstaller
@@ -122,18 +112,13 @@ jobs:
     - name: 🧱 Build GUI binary
       run: |
         cd client_gui
-        pyinstaller --onefile --windowed main.py --name ServerClientGUI
-
-    - name: 📦 Package Windows GUI binary
-      run: |
-        mkdir -p dist/windows
-        cp client_gui/dist/ServerClientGUI.exe dist/windows/
+        pyinstaller --onefile --windowed --name ServerClientGUI --distpath ../build/bin main.py
 
     - name: 📤 Upload Windows GUI artifact
       uses: actions/upload-artifact@v4
       with:
         name: windows-gui
-        path: dist/windows/
+        path: build/bin/
 
   ##
   # @brief Build Python GUI executable on Linux using PyInstaller
@@ -157,30 +142,16 @@ jobs:
     - name: 🧱 Build GUI binary
       run: |
         cd client_gui
-        pyinstaller --onefile --windowed main.py --name ServerClientGUI
-
-    - name: 📦 Package Linux GUI binary
-      run: |
-        mkdir -p dist/linux
-        cp client_gui/dist/ServerClientGUI dist/linux/
+        pyinstaller --onefile --name ServerClientGUI --distpath ../build/bin main.py
 
     - name: 📤 Upload Linux GUI artifact
       uses: actions/upload-artifact@v4
       with:
         name: linux-gui
-        path: dist/linux/
-    ##
+        path: build/bin/
+
+  ##
   # @brief Create version bump PR and GitHub release
-  # @details
-  # This job runs after all builds succeed. It:
-  #   - Detects latest version tag
-  #   - Increments version
-  #   - Creates a pull request if needed
-  #   - Tags the release
-  #   - Downloads and merges artifacts from all build jobs
-  #   - Publishes unified platform-specific binaries to GitHub Releases
-  # @note
-  # Artifact folders are normalized into dist/windows/ and dist/linux/
   ##
   tag-and-release:
     name: Version Bump PR + Release
@@ -275,11 +246,11 @@ jobs:
     - name: 🧩 Normalize artifact folders
       if: github.ref == 'refs/heads/main'
       run: |
-        mkdir -p dist/windows dist/linux
-        cp -r dist/windows-c/* dist/windows/ || true
-        cp -r dist/windows-gui/* dist/windows/ || true
-        cp -r dist/linux-c/* dist/linux/ || true
-        cp -r dist/linux-gui/* dist/linux/ || true
+        mkdir -p release/windows release/linux
+        cp -r dist/windows-c/* release/windows/ || true
+        cp -r dist/windows-gui/* release/windows/ || true
+        cp -r dist/linux-c/* release/linux/ || true
+        cp -r dist/linux-gui/* release/linux/ || true
 
     - name: 🚀 Create GitHub Release
       if: github.ref == 'refs/heads/main'
@@ -288,5 +259,5 @@ jobs:
         name: Release ${{ steps.merged-version.outputs.version }}
         tag_name: SRV_CLE_GEN_GUI_${{ steps.merged-version.outputs.version }}
         files: |
-          dist/windows/*
-          dist/linux/*
+          release/windows/*
+          release/linux/*
