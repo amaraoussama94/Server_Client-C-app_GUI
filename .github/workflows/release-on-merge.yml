@@ -224,7 +224,7 @@ jobs:
         token: ${{ secrets.GUI_TOKEN }}
         branch: version-bump-${{ steps.versioning.outputs.version }}
         title: "chore: bump version to ${{ steps.versioning.outputs.version }}"
- |    body: | 
+      body: | 
             # 📝 Task Title
             Automated version bump and release preparation
 
