@@ -12,12 +12,11 @@
 #   - Bumps version tag and creates GitHub release
 #
 # @note
-# Windows binaries (GUI, client, server) are placed in dist/windows/
-# Linux binaries (GUI, client, server) are placed in dist/linux/
-# Artifact names are now unique per job to prevent upload conflicts
+# GUI builds are now split into separate jobs for Windows and Linux to avoid shell compatibility issues.
+# Artifact names are unique: windows-c, windows-gui, linux-c, linux-gui
 #
 # @author Oussama Amara
-# @version 2.4
+# @version 2.5
 # @date 2025-10-26
 ##
 
@@ -102,14 +101,11 @@ jobs:
         path: dist/linux/
 
   ##
-  # @brief Build Python GUI executable using PyInstaller
+  # @brief Build Python GUI executable on Windows using PyInstaller
   ##
-  build-gui:
-    name: Build GUI Executable
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest]
+  build-gui-windows:
+    name: Build GUI Executable (Windows)
+    runs-on: windows-latest
 
     steps:
     - name: 🧾 Checkout code
@@ -128,28 +124,66 @@ jobs:
         cd client_gui
         pyinstaller --onefile --windowed main.py --name ServerClientGUI
 
-    - name: 📦 Package GUI binary
+    - name: 📦 Package Windows GUI binary
       run: |
-        if [ "${{ runner.os }}" = "Windows" ]; then
-          mkdir -p dist/windows
-          cp client_gui/dist/ServerClientGUI.exe dist/windows/
-        else
-          mkdir -p dist/linux
-          cp client_gui/dist/ServerClientGUI dist/linux/
-        fi
+        mkdir -p dist/windows
+        cp client_gui/dist/ServerClientGUI.exe dist/windows/
 
-    - name: 📤 Upload GUI artifact
+    - name: 📤 Upload Windows GUI artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ runner.os == 'Windows' && 'windows-gui' || 'linux-gui' }}
-        path: ${{ runner.os == 'Windows' && 'dist/windows/' || 'dist/linux/' }}
+        name: windows-gui
+        path: dist/windows/
 
   ##
+  # @brief Build Python GUI executable on Linux using PyInstaller
+  ##
+  build-gui-linux:
+    name: Build GUI Executable (Linux)
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 🧾 Checkout code
+      uses: actions/checkout@v3
+
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: 📦 Install PyInstaller and PyQt5
+      run: pip install pyinstaller PyQt5
+
+    - name: 🧱 Build GUI binary
+      run: |
+        cd client_gui
+        pyinstaller --onefile --windowed main.py --name ServerClientGUI
+
+    - name: 📦 Package Linux GUI binary
+      run: |
+        mkdir -p dist/linux
+        cp client_gui/dist/ServerClientGUI dist/linux/
+
+    - name: 📤 Upload Linux GUI artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-gui
+        path: dist/linux/
+  ##
   # @brief Create version bump PR and GitHub release
+  # @details
+  # This job runs after all builds succeed. It:
+  #   - Detects latest version tag
+  #   - Increments version
+  #   - Creates a pull request if needed
+  #   - Tags the release
+  #   - Publishes all platform-specific binaries (C and GUI)
+  # @note
+  # Depends on: build-windows, build-linux, build-gui-windows, build-gui-linux
   ##
   tag-and-release:
     name: Version Bump PR + Release
-    needs: [build-windows, build-linux, build-gui]
+    needs: [build-windows, build-linux, build-gui-windows, build-gui-linux]
     runs-on: ubuntu-latest
 
     steps:
