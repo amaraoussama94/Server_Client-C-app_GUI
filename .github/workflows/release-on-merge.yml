@@ -248,8 +248,8 @@ jobs:
             - [x] No debug prints
             - [x] VERSION updated
 
-      labels: version-bump, automated
-      assignees: oussamaamara94
+        labels: version-bump, automated
+        assignees: oussamaamara94
 
     - name: 🧾 Checkout after merge
       if: github.ref == 'refs/heads/main'
