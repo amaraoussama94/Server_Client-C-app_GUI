@@ -6,17 +6,18 @@
 # @details
 # This workflow performs the following:
 #   - Builds C server/client on Windows and Linux
-#   - Builds Python GUI using PyInstaller
+#   - Builds Python GUI using PyInstaller (with PyQt5)
 #   - Packages all platform-specific binaries into unified folders
-#   - Uploads artifacts for each platform
+#   - Uploads artifacts with distinct names to avoid conflicts
 #   - Bumps version tag and creates GitHub release
 #
 # @note
-# All Windows binaries (GUI, client, server) are now placed in dist/windows/
-# All Linux binaries (GUI, client, server) are now placed in dist/linux/
+# Windows binaries (GUI, client, server) are placed in dist/windows/
+# Linux binaries (GUI, client, server) are placed in dist/linux/
+# Artifact names are now unique per job to prevent upload conflicts
 #
 # @author Oussama Amara
-# @version 2.3
+# @version 2.4
 # @date 2025-10-26
 ##
 
@@ -59,15 +60,15 @@ jobs:
         make clean
         make all
 
-    - name: 📦 Package Windows binaries
+    - name: 📦 Package Windows C binaries
       run: |
         mkdir -p dist/windows
         cp build/bin/*.exe dist/windows/
 
-    - name: 📤 Upload Windows artifacts
+    - name: 📤 Upload Windows C artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: windows
+        name: windows-c
         path: dist/windows/
 
   ##
@@ -89,15 +90,15 @@ jobs:
         make clean
         make all
 
-    - name: 📦 Package Linux binaries
+    - name: 📦 Package Linux C binaries
       run: |
         mkdir -p dist/linux
         cp build/bin/* dist/linux/
 
-    - name: 📤 Upload Linux artifacts
+    - name: 📤 Upload Linux C artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: linux
+        name: linux-c
         path: dist/linux/
 
   ##
@@ -119,8 +120,8 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: 📦 Install PyInstaller
-      run: pip install pyinstaller
+    - name: 📦 Install PyInstaller and PyQt5
+      run: pip install pyinstaller PyQt5
 
     - name: 🧱 Build GUI binary
       run: |
@@ -140,18 +141,11 @@ jobs:
     - name: 📤 Upload GUI artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ runner.os == 'Windows' && 'windows' || 'linux' }}
+        name: ${{ runner.os == 'Windows' && 'windows-gui' || 'linux-gui' }}
         path: ${{ runner.os == 'Windows' && 'dist/windows/' || 'dist/linux/' }}
 
   ##
   # @brief Create version bump PR and GitHub release
-  # @details
-  # This job runs after all builds succeed. It:
-  #   - Detects latest version tag
-  #   - Increments version
-  #   - Creates a pull request if needed
-  #   - Tags the release
-  #   - Publishes all platform-specific binaries
   ##
   tag-and-release:
     name: Version Bump PR + Release
@@ -241,6 +235,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         path: dist/
+        merge-multiple: true
 
     - name: 🚀 Create GitHub Release
       if: github.ref == 'refs/heads/main'
