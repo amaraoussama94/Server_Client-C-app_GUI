@@ -21,6 +21,8 @@ class MessageInputPanel(QWidget):
         super().__init__()
 
         layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(5)
         self.setLayout(layout)
 
         self.input = QLineEdit()
