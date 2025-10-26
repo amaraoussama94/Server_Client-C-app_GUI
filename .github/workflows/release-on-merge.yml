@@ -7,15 +7,17 @@
 # This workflow performs the following:
 #   - Builds C server/client on Windows and Linux
 #   - Builds Python GUI using PyInstaller
-#   - Uploads all binaries as artifacts
+#   - Packages all platform-specific binaries into unified folders
+#   - Uploads artifacts for each platform
 #   - Bumps version tag and creates GitHub release
 #
 # @note
-# GUI binaries are now included in the release artifacts for both Windows and Linux.
+# All Windows binaries (GUI, client, server) are now placed in dist/windows/
+# All Linux binaries (GUI, client, server) are now placed in dist/linux/
 #
 # @author Oussama Amara
-# @version 2.2
-# @date 2025-10-25
+# @version 2.3
+# @date 2025-10-26
 ##
 
 name: Cross-Platform Build, GUI Packaging & Release
@@ -57,16 +59,16 @@ jobs:
         make clean
         make all
 
-    - name: 📦 Package C binaries
+    - name: 📦 Package Windows binaries
       run: |
-        mkdir -p dist/windows-binaries
-        cp build/bin/*.exe dist/windows-binaries/
+        mkdir -p dist/windows
+        cp build/bin/*.exe dist/windows/
 
-    - name: 📤 Upload C artifacts
+    - name: 📤 Upload Windows artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: windows-binaries
-        path: dist/windows-binaries/
+        name: windows
+        path: dist/windows/
 
   ##
   # @brief Build C binaries on Linux
@@ -87,16 +89,16 @@ jobs:
         make clean
         make all
 
-    - name: 📦 Package C binaries
+    - name: 📦 Package Linux binaries
       run: |
-        mkdir -p dist/linux-binaries
-        cp build/bin/* dist/linux-binaries/
+        mkdir -p dist/linux
+        cp build/bin/* dist/linux/
 
-    - name: 📤 Upload C artifacts
+    - name: 📤 Upload Linux artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: linux-binaries
-        path: dist/linux-binaries/
+        name: linux
+        path: dist/linux/
 
   ##
   # @brief Build Python GUI executable using PyInstaller
@@ -127,14 +129,19 @@ jobs:
 
     - name: 📦 Package GUI binary
       run: |
-        mkdir -p dist/gui-${{ runner.os }}
-        cp client_gui/dist/ServerClientGUI* dist/gui-${{ runner.os }}/
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          mkdir -p dist/windows
+          cp client_gui/dist/ServerClientGUI.exe dist/windows/
+        else
+          mkdir -p dist/linux
+          cp client_gui/dist/ServerClientGUI dist/linux/
+        fi
 
     - name: 📤 Upload GUI artifact
       uses: actions/upload-artifact@v4
       with:
-        name: gui-${{ runner.os }}
-        path: dist/gui-${{ runner.os }}/
+        name: ${{ runner.os == 'Windows' && 'windows' || 'linux' }}
+        path: ${{ runner.os == 'Windows' && 'dist/windows/' || 'dist/linux/' }}
 
   ##
   # @brief Create version bump PR and GitHub release
@@ -144,7 +151,7 @@ jobs:
   #   - Increments version
   #   - Creates a pull request if needed
   #   - Tags the release
-  #   - Publishes all artifacts including GUI binaries
+  #   - Publishes all platform-specific binaries
   ##
   tag-and-release:
     name: Version Bump PR + Release
@@ -202,7 +209,7 @@ jobs:
         branch: version-bump-${{ steps.versioning.outputs.version }}
         title: "chore: bump version to ${{ steps.versioning.outputs.version }}"
         body: |
-          Automated version bump to `${{ steps.versioning.outputs.version}}`.
+          Automated version bump to `${{ steps.versioning.outputs.version }}`.
           Triggered by successful builds on Windows, Linux, and GUI packaging.
         labels: version-bump, automated
         assignees: OussamaAmara
@@ -242,7 +249,5 @@ jobs:
         name: Release ${{ steps.merged-version.outputs.version }}
         tag_name: SRV_CLE_GEN_GUI_${{ steps.merged-version.outputs.version }}
         files: |
-          dist/windows-binaries/*.exe
-          dist/linux-binaries/*
-          dist/gui-windows/*.exe
-          dist/gui-ubuntu/*
+          dist/windows/*
+          dist/linux/*
