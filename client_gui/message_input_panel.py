@@ -1,37 +1,39 @@
 ##
 # @file message_input_panel.py
-# @brief Input box for typing messages.
+# @brief Input box for typing messages, with embedded send button.
+#        Emits signal when user presses Enter or clicks Send.
 # @author Oussama Amara
-# @date 2025-10-19
-# @version 1.0
-#Note:
-#This widget emits a signal when the user presses Enter.
-#You’ll connect this to SendButton or directly to the subprocess later.
+# @date 2025-10-26
+# @version 1.1
 ##
 
-from PyQt5.QtWidgets import QWidget, QLineEdit, QVBoxLayout
+from PyQt5.QtWidgets import QWidget, QLineEdit, QPushButton, QHBoxLayout
 from PyQt5.QtCore import pyqtSignal
 
 ##
 # @class MessageInputPanel
-# @brief Provides a text input field for composing messages.
+# @brief Provides a text input field and send button for composing messages.
 ##
 class MessageInputPanel(QWidget):
-    # Signal emitted when user presses Enter
     message_ready = pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
 
-        layout = QVBoxLayout()
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(5)
         self.setLayout(layout)
 
         self.input = QLineEdit()
         self.input.setPlaceholderText("Type your message...")
-        layout.addWidget(self.input)
+        self.send_button = QPushButton("Send")
 
-        # Emit signal on Enter
+        layout.addWidget(self.input)
+        layout.addWidget(self.send_button)
+
         self.input.returnPressed.connect(self.emit_message)
+        self.send_button.clicked.connect(self.emit_message)
 
     ##
     # @brief Emits the typed message and clears the input.
