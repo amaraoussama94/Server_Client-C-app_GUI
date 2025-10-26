@@ -97,6 +97,9 @@ build-gui:
 	@echo " Building Python GUI executable..."
 	@$(PYINSTALLER) $(PYINSTALLER_FLAGS) --distpath $(BIN_DIR)  client_gui/main.py
 	@echo " GUI built: $(GUI_BINARY)"
+	@echo " Copying assets to $(BIN_DIR)..."
+	@cp -r assets $(BIN_DIR)/assets
+	@echo " GUI built: $(GUI_BINARY)"
 
 
 # ─── Clean GUI Artifacts ────────────────────────────────────
